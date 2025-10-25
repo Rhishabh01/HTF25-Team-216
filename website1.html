@@ -1,0 +1,85 @@
+function getAppointmentForm() {
+            // Patient options are generated but NOT used in the form (as requested)
+            // const patientOptions = patients.map(p => `<option value="${p.id}">${p.name}</option>`).join(''); 
+            
+            const doctorOptions = doctors.map(d => `<option value="${d.id}">${d.name} (${d.specialization})</option>`).join('');
+
+            return `
+                <form onsubmit="handleAddAppointment(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Patient Name</label>
+                        <input type="text" id="appointmentPatient" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., John Doe">    
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Doctor</label>
+                        <select id="apptDoctorId" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select Doctor</option>
+                            ${doctorOptions}
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                            <input type="date" id="apptDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                            <input type="time" id="apptTime" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                        Book Appointment
+                    </button>
+                </form>
+            `;
+        }
+
+        function handleAddAppointment(event) {
+            event.preventDefault();
+
+            // 1. Get Values from Form
+            // We get the name directly from the input field
+            const patientNameInput = document.getElementById('appointmentPatient').value.trim();
+            const doctorId = document.getElementById('apptDoctorId').value;
+            const date = document.getElementById('apptDate').value;
+            const time = document.getElementById('apptTime').value;
+
+            // 2. Find Doctor Object (still necessary as it's a select field)
+            const doctor = doctors.find(d => d.id === doctorId);
+
+            if (!doctor) {
+                alert('Error finding doctor. Please select a doctor.');
+                return;
+            }
+            if (!patientNameInput) {
+                alert('Please enter a patient name.');
+                return;
+            }
+            
+            // 3. Format Time (Existing Logic - retained)
+            const [hours, minutes] = time.split(':');
+            const hoursInt = parseInt(hours);
+            const suffix = hoursInt >= 12 ? 'PM' : 'AM';
+            const formattedHours = ((hoursInt + 11) % 12 + 1);
+            const formattedTime = `${formattedHours}:${minutes} ${suffix}`;
+
+            // 4. Create New Appointment Object
+            const newAppointment = {
+                id: generateUniqueId(),
+                // Generate a unique ID for the patient field since they aren't pre-registered.
+                // NOTE: This patient won't exist in the 'patients' array.
+                patientId: generateUniqueId(), 
+                patientName: patientNameInput,  // Use the name entered in the text field
+                doctorId: doctorId,
+                doctorName: doctor.name,
+                date: date,
+                time: formattedTime,
+                status: 'Scheduled'
+            };
+
+            // 5. Save and Update UI
+            appointments.push(newAppointment);
+            closeModal();
+            renderContent('appointments');
+            console.log('Walk-In Appointment Added:', newAppointment);
+        }
