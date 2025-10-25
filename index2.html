@@ -17,17 +17,24 @@
         .hidden {
             display: none !important;
         }
+        /* Define the transition properties for the sidebar and main content */
         .sidebar {
             transition: width 0.3s ease;
         }
         .main-content {
             transition: margin-left 0.3s ease;
         }
+        /* Collapsed state styles for sidebar and content */
+        .sidebar-collapsed {
+            width: 4.5rem !important; 
+        }
+        .content-collapsed {
+            margin-left: 4.5rem !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
 
-    <!-- Login Screen -->
     <div id="loginScreen" class="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
             <div class="text-center mb-8">
@@ -67,12 +74,10 @@
         </div>
     </div>
 
-    <!-- Main Application -->
     <div id="mainApp" class="hidden min-h-screen flex">
-        <!-- Sidebar -->
         <div id="sidebar" class="w-64 bg-white shadow-lg fixed h-full z-40 sidebar">
             <div class="p-4 border-b flex items-center justify-between">
-                <h1 class="text-xl font-bold text-blue-600">HMS</h1>
+                <h1 id="sidebarTitle" class="text-xl font-bold text-blue-600">HMS</h1>
                 <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg">
                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -84,15 +89,14 @@
             
             <div class="absolute bottom-0 w-full p-4 border-t">
                 <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                     </svg>
-                    <span class="font-medium">Logout</span>
+                    <span class="font-medium" id="logoutText">Logout</span>
                 </button>
             </div>
         </div>
 
-        <!-- Main Content -->
         <div id="mainContent" class="flex-1 ml-64 main-content">
             <div class="bg-white shadow-sm p-4 sticky top-0 z-30">
                 <div class="flex justify-between items-center">
@@ -105,7 +109,6 @@
         </div>
     </div>
 
-    <!-- Modal -->
     <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md">
             <div class="flex justify-between items-center mb-4">
@@ -124,7 +127,7 @@
         // Global State
         let currentUser = null;
         let currentView = 'dashboard';
-        let sidebarOpen = true;
+        let sidebarOpen = true; // Sidebar starts open
         let patients = [];
         let doctors = [];
         let appointments = [];
@@ -162,6 +165,11 @@
             todayAppointments: 24,
             pendingBills: 8
         };
+
+        // Utility Function
+        function generateUniqueId() {
+            return Date.now().toString();
+        }
 
         // Initialize
         function init() {
@@ -204,6 +212,44 @@
             document.getElementById('loginPassword').value = '';
         }
 
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarTitle = document.getElementById('sidebarTitle');
+            const logoutText = document.getElementById('logoutText');
+
+            if (sidebarOpen) {
+                // Collapse the sidebar
+                sidebar.classList.add('sidebar-collapsed');
+                sidebar.classList.remove('w-64');
+                
+                mainContent.classList.add('content-collapsed');
+                mainContent.classList.remove('ml-64');
+                
+                // Hide text elements
+                sidebarTitle.classList.add('hidden');
+                logoutText.classList.add('hidden');
+
+                sidebarOpen = false;
+            } else {
+                // Expand the sidebar
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('w-64');
+                
+                mainContent.classList.remove('content-collapsed');
+                mainContent.classList.add('ml-64');
+                
+                // Show text elements
+                sidebarTitle.classList.remove('hidden');
+                logoutText.classList.remove('hidden');
+
+                sidebarOpen = true;
+            }
+            // Re-render navigation to apply correct styling based on sidebar state
+            renderNavigation();
+        }
+
         // Initialize App
         function initializeApp() {
             document.getElementById('userName').textContent = currentUser.name;
@@ -221,15 +267,26 @@
 
             navItems.forEach(item => {
                 const button = document.createElement('button');
-                button.className = currentView === item.id 
+                
+                // Base classes for the button
+                let classes = currentView === item.id 
                     ? 'w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600 text-white'
                     : 'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100';
+
+                // Adjust classes if sidebar is collapsed
+                if (!sidebarOpen) {
+                    // This centers the icon and removes text padding
+                    classes += ' justify-center !p-3'; 
+                }
+                
+                button.className = classes;
                 button.onclick = () => renderContent(item.id);
+                
                 button.innerHTML = `
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         ${getIconSVG(item.icon)}
                     </svg>
-                    <span class="font-medium">${item.label}</span>
+                    <span class="font-medium ${!sidebarOpen ? 'hidden' : ''}">${item.label}</span>
                 `;
                 navMenu.appendChild(button);
             });
@@ -289,6 +346,8 @@
                 case 'myReports':
                     contentArea.innerHTML = renderReports();
                     break;
+                default:
+                    contentArea.innerHTML = '<h2 class="text-2xl font-bold text-red-600">404 - View Not Found</h2>';
             }
         }
 
@@ -367,15 +426,15 @@
                     
                     <div class="bg-white rounded-xl shadow-md p-6">
                         <div class="overflow-x-auto">
-                            <table class="w-full">
+                            <table class="w-full text-left">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gender</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Age</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Gender</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
@@ -388,30 +447,89 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-gray-600">${patient.email}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex gap-2">
-                                                    <button onclick="viewPatient('${patient.id}')" class="text-blue-600 hover:text-blue-800">
+                                                    <button onclick="viewPatient('${patient.id}')" title="View" class="text-blue-600 hover:text-blue-800 p-1">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                                         </svg>
                                                     </button>
-                                                    <button onclick="editPatient('${patient.id}')" class="text-green-600 hover:text-green-800">
+                                                    <button onclick="editPatient('${patient.id}')" title="Edit" class="text-green-600 hover:text-green-800 p-1">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                         </svg>
                                                     </button>
-                                                    <button onclick="deletePatient('${patient.id}')" class="text-red-600 hover:text-red-800">
+                                                    <button onclick="deletePatient('${patient.id}')" title="Delete" class="text-red-600 hover:text-red-800 p-1">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('')}
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             `;
         }
+        
+        function renderAppointments() {
+             const appts = currentView === 'myAppointments' 
+                ? appointments.filter(a => a.patientName === currentUser.name)
+                : appointments;
+
+            return `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-800">${currentView === 'myAppointments' ? 'My Appointments' : 'Appointments Management'}</h2>
+                        ${(currentUser.role === 'admin' || currentUser.role === 'receptionist') ? `
+                            <button onclick="openModal('addAppointment')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Book Appointment
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="overflow-x-auto">
+                            ${appts.length === 0 ? '<p class="text-gray-500 p-4">No appointments found.</p>' : `
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">${currentView === 'myAppointments' ? 'Doctor' : 'Patient'}</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Doctor</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Date</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Time</th>
+                                        <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    ${appts.map(apt => `
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-800">${currentView === 'myAppointments' ? apt.doctorName : apt.patientName}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-gray-600">${apt.doctorName}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-gray-600">${apt.date}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-gray-600">${apt.time}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-3 py-1 rounded-full text-xs font-semibold ${apt.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                                                    ${apt.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
 
         function renderDoctors() {
             return `
@@ -506,7 +624,7 @@
         }
 
         // Modal Functions
-        function openModal(type) {
+        function openModal(type, itemId = null) {
             const modal = document.getElementById('modal');
             const modalTitle = document.getElementById('modalTitle');
             const modalContent = document.getElementById('modalContent');
@@ -526,12 +644,15 @@
                     modalTitle.textContent = 'Add New Doctor';
                     modalContent.innerHTML = getDoctorForm();
                     break;
+                // You can extend the modal for editing here if you prefer
             }
         }
 
         function closeModal() {
             document.getElementById('modal').classList.add('hidden');
         }
+
+        // --- Patient Management Forms ---
 
         function getPatientForm() {
             return `
@@ -557,257 +678,208 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input type="tel" id="patientPhone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Phone number">
+                        <input type="tel" id="patientPhone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 123-456-7890">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input type="email" id="patientEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Email address">
+                        <input type="email" id="patientEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter patient email">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                        <textarea id="patientAddress" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Full address"></textarea>
+                        <textarea id="patientAddress" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Enter full address"></textarea>
                     </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Add Patient</button>
-                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
-                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                        Register Patient
+                    </button>
                 </form>
             `;
         }
 
-        function getAppointmentForm() {
+        function getPatientEditForm(patient) {
             return `
-                <form onsubmit="handleAddAppointment(event)" class="space-y-4">
+                <form onsubmit="handleEditPatient(event, '${patient.id}')" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Patient Name</label>
-                        <select id="appointmentPatient" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select Patient</option>
-                            ${patients.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" id="editPatientName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="${patient.name}">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Doctor</label>
-                        <select id="appointmentDoctor" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select Doctor</option>
-                            ${doctors.map(d => `<option value="${d.name}">${d.name} - ${d.specialization}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                        <input type="date" id="appointmentDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                        <input type="time" id="appointmentTime" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Book Appointment</button>
-                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
-                    </div>
-                </form>
-            `;
-        }
-
-        function getDoctorForm() {
-            return `
-                <form onsubmit="handleAddDoctor(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Doctor Name</label>
-                        <input type="text" id="doctorName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Dr. John Doe">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
-                        <input type="text" id="doctorSpecialization" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., Cardiology">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                            <input type="number" id="editPatientAge" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="${patient.age}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                            <select id="editPatientGender" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="Male" ${patient.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                <option value="Female" ${patient.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                <option value="Other" ${patient.gender === 'Other' ? 'selected' : ''}>Other</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input type="tel" id="doctorPhone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Phone number">
+                        <input type="tel" id="editPatientPhone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="${patient.phone}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input type="email" id="doctorEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Email address">
+                        <input type="email" id="editPatientEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="${patient.email}">
                     </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Add Doctor</button>
-                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <textarea id="editPatientAddress" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3">${patient.address}</textarea>
                     </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                        Save Changes
+                    </button>
                 </form>
             `;
         }
 
-        // Handle Form Submissions
-        function handleAddPatient(e) {
-            e.preventDefault();
+        // --- Patient Management CRUD Logic ---
+        
+        // C: Add Patient
+        function handleAddPatient(event) {
+            event.preventDefault(); // Stop the form from submitting normally
+
+            const name = document.getElementById('patientName').value;
+            const age = document.getElementById('patientAge').value;
+            const gender = document.getElementById('patientGender').value;
+            const phone = document.getElementById('patientPhone').value;
+            const email = document.getElementById('patientEmail').value;
+            const address = document.getElementById('patientAddress').value;
+
             const newPatient = {
-                id: String(patients.length + 1),
-                name: document.getElementById('patientName').value,
-                age: parseInt(document.getElementById('patientAge').value),
-                gender: document.getElementById('patientGender').value,
-                phone: document.getElementById('patientPhone').value,
-                email: document.getElementById('patientEmail').value,
-                address: document.getElementById('patientAddress').value
+                id: generateUniqueId(),
+                name,
+                age: parseInt(age),
+                gender,
+                phone,
+                email,
+                address
             };
+
             patients.push(newPatient);
-            stats.totalPatients++;
+
             closeModal();
             renderContent('patients');
-            alert('Patient added successfully!');
+            console.log('Patient Added:', newPatient);
         }
 
-        function handleAddAppointment(e) {
-            e.preventDefault();
-            const date = document.getElementById('appointmentDate').value;
-            const time = document.getElementById('appointmentTime').value;
-            const timeFormatted = new Date('2000-01-01 ' + time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-            
-            const newAppointment = {
-                id: String(appointments.length + 1),
-                patientName: document.getElementById('appointmentPatient').value,
-                doctorName: document.getElementById('appointmentDoctor').value,
-                date: date,
-                time: timeFormatted,
-                status: 'Scheduled'
-            };
-            appointments.push(newAppointment);
-            closeModal();
-            renderContent(currentView);
-            alert('Appointment booked successfully!');
-        }
+        // R: View Patient
+        function viewPatient(patientId) {
+            const patient = patients.find(p => p.id === patientId);
 
-        function handleAddDoctor(e) {
-            e.preventDefault();
-            const newDoctor = {
-                id: String(doctors.length + 1),
-                name: document.getElementById('doctorName').value,
-                specialization: document.getElementById('doctorSpecialization').value,
-                phone: document.getElementById('doctorPhone').value,
-                email: document.getElementById('doctorEmail').value
-            };
-            doctors.push(newDoctor);
-            stats.totalDoctors++;
-            closeModal();
-            renderContent('doctors');
-            alert('Doctor added successfully!');
-        }
-
-        // Delete Functions
-        function deletePatient(id) {
-            if (confirm('Are you sure you want to delete this patient?')) {
-                patients = patients.filter(p => p.id !== id);
-                stats.totalPatients--;
-                renderContent('patients');
-                alert('Patient deleted successfully!');
+            if (!patient) {
+                alert('Patient not found!');
+                return;
             }
-        }
 
-        function deleteAppointment(id) {
-            if (confirm('Are you sure you want to delete this appointment?')) {
-                appointments = appointments.filter(a => a.id !== id);
-                renderContent(currentView);
-                alert('Appointment deleted successfully!');
-            }
-        }
-
-        function deleteDoctor(id) {
-            if (confirm('Are you sure you want to delete this doctor?')) {
-                doctors = doctors.filter(d => d.id !== id);
-                stats.totalDoctors--;
-                renderContent('doctors');
-                alert('Doctor deleted successfully!');
-            }
-        }
-
-        // View/Edit Functions (placeholders)
-        function viewPatient(id) {
-            const patient = patients.find(p => p.id === id);
-            if (patient) {
-                alert(`Patient Details:\n\nName: ${patient.name}\nAge: ${patient.age}\nGender: ${patient.gender}\nPhone: ${patient.phone}\nEmail: ${patient.email}\nAddress: ${patient.address}`);
-            }
-        }
-
-        function editPatient(id) {
-            alert('Edit patient functionality - coming soon!');
-        }
-
-        function editAppointment(id) {
-            alert('Edit appointment functionality - coming soon!');
-        }
-
-        function editDoctor(id) {
-            alert('Edit doctor functionality - coming soon!');
-        }
-
-        // Sidebar Toggle
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            
-            if (sidebarOpen) {
-                sidebar.style.width = '0px';
-                mainContent.style.marginLeft = '0px';
-                sidebarOpen = false;
-            } else {
-                sidebar.style.width = '256px';
-                mainContent.style.marginLeft = '256px';
-                sidebarOpen = true;
-            }
-        }
-
-        // Initialize on load
-        window.onload = function() {
-            init();
-        };
-    </script>
-</body>
-</html>M4 7h16"/>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            modalTitle.textContent = `Patient Details: ${patient.name}`;
+            modalContent.innerHTML = `
+                <div class="space-y-3 p-4 bg-gray-50 rounded-lg text-sm">
+                    <p><span class="font-medium text-gray-700">ID:</span> ${patient.id}</p>
+                    <p><span class="font-medium text-gray-700">Name:</span> ${patient.name}</p>
+                    <p><span class="font-medium text-gray-700">Age/Gender:</span> ${patient.age} / ${patient.gender}</p>
+                    <p><span class="font-medium text-gray-700">Phone:</span> ${patient.phone}</p>
+                    <p><span class="font-medium text-gray-700">Email:</span> ${patient.email}</p>
+                    <p><span class="font-medium text-gray-700">Address:</span> ${patient.address}</p>
                 </div>
+                <button onclick="editPatient('${patientId}')" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors mt-4">
+                    Edit Patient
+                </button>
             `;
+            document.getElementById('modal').classList.remove('hidden');
         }
 
-        function renderAppointments() {
-            return `
-                <div class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-gray-800">Appointments</h2>
-                        <button onclick="openModal('addAppointment')" class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                            </svg>
-                            Book Appointment
-                        </button>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <div class="space-y-3">
-                            ${appointments.map(apt => `
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                                    <div class="flex-1">
-                                        <p class="font-semibold text-gray-800">${apt.patientName}</p>
-                                        <p class="text-sm text-gray-600">Doctor: ${apt.doctorName}</p>
-                                    </div>
-                                    <div class="flex-1 text-center">
-                                        <p class="text-sm font-medium text-gray-700">${apt.date}</p>
-                                        <p class="text-sm text-gray-600">${apt.time}</p>
-                                    </div>
-                                    <div class="flex-1 flex justify-end items-center gap-3">
-                                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${apt.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
-                                            ${apt.status}
-                                        </span>
-                                        <button onclick="editAppointment('${apt.id}')" class="text-blue-600 hover:text-blue-800">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                        <button onclick="deleteAppointment('${apt.id}')" class="text-red-600 hover:text-red-800">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3
+        // U: Edit Patient (Opens Modal)
+        function editPatient(patientId) {
+            const patientToEdit = patients.find(p => p.id === patientId);
+
+            if (!patientToEdit) {
+                alert('Patient not found!');
+                return;
+            }
+
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+
+            modalTitle.textContent = 'Edit Patient Details';
+            modalContent.innerHTML = getPatientEditForm(patientToEdit);
+            modal.classList.remove('hidden');
+        }
+
+        // U: Handle Edit Patient (Submits Form)
+        function handleEditPatient(event, patientId) {
+            event.preventDefault();
+
+            const patientIndex = patients.findIndex(p => p.id === patientId);
+
+            if (patientIndex > -1) {
+                const updatedPatient = {
+                    id: patientId,
+                    name: document.getElementById('editPatientName').value,
+                    age: parseInt(document.getElementById('editPatientAge').value),
+                    gender: document.getElementById('editPatientGender').value,
+                    phone: document.getElementById('editPatientPhone').value,
+                    email: document.getElementById('editPatientEmail').value,
+                    address: document.getElementById('editPatientAddress').value,
+                };
+
+                patients[patientIndex] = updatedPatient;
+
+                closeModal();
+                renderContent('patients');
+                console.log('Patient Updated:', updatedPatient);
+            } else {
+                alert('Error: Patient could not be updated.');
+            }
+        }
+        
+        // D: Delete Patient
+        function deletePatient(patientId) {
+            if (confirm('Are you sure you want to delete this patient record? This action cannot be undone.')) {
+                const initialLength = patients.length;
+                patients = patients.filter(p => p.id !== patientId);
+
+                if (patients.length < initialLength) {
+                    renderContent('patients');
+                    console.log(`Patient with ID ${patientId} deleted.`);
+                } else {
+                    alert('Error: Patient not found or could not be deleted.');
+                }
+            }
+        }
+        
+        // --- Placeholder Functions for other forms (e.g., Doctors, Appointments) ---
+
+        function getAppointmentForm() {
+            // Placeholder: Implement a form for booking appointments
+            return `<p class="text-gray-600">Appointment booking form goes here. Available Doctors: ${doctors.map(d => d.name).join(', ')}</p>
+                    <button onclick="alert('Appointment booked (mock)')" class="w-full bg-green-600 text-white py-2 rounded-lg">Book</button>`;
+        }
+
+        function getDoctorForm() {
+            // Placeholder: Implement a form for adding doctors
+            return `<p class="text-gray-600">Doctor registration form goes here.</p>
+                    <button onclick="alert('Doctor added (mock)')" class="w-full bg-blue-600 text-white py-2 rounded-lg">Add</button>`;
+        }
+
+        function editDoctor(doctorId) {
+            alert(`Editing Doctor with ID: ${doctorId} (Functionality needs implementation)`);
+        }
+        
+        function deleteDoctor(doctorId) {
+            if (confirm(`Are you sure you want to delete Doctor with ID: ${doctorId}?`)) {
+                alert(`Doctor deleted (mock)`);
+            }
+        }
+
+        // Start the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <p1></p1>
+</body>
+</html>
