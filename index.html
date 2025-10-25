@@ -6,61 +6,6 @@
     <title>Hospital Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .sidebar {
-            transition: width 0.3s ease;
-        }
-        .main-content {
-            transition: margin-left 0.3s ease;
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
-
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div class="text-center mb-8">
-                <div class="inline-block p-4 bg-blue-100 rounded-full mb-4">
-                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                    </svg>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-800">Hospital Management</h1>
-                <p class="text-gray-600 mt-2">Sign in to access your dashboard</p>
-            </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input type="email" id="loginEmail" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your email">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <input type="password" id="loginPassword" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your password">
-                </div>
-                <div id="loginError" class="hidden bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm"></div>
-                <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Sign In
-                </button>
-            </div>
-            
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                <p class="text-sm text-gray-700 font-semibold mb-2">Demo Credentials:</p>
-                <div class="text-xs text-gray-600 space-y-1">
-                    <p>Admin: admin@hospital.com / password123</p>
-                    <p>Doctor: doctor@hospital.com / password123</p>
-                    <p>Reception: reception@hospital.com / password123</p>
                     <p>Patient: patient@hospital.com / password123</p>
                 </div>
             </div>
@@ -70,7 +15,7 @@
     <!-- Main Application -->
     <div id="mainApp" class="hidden min-h-screen flex">
         <!-- Sidebar -->
-        <div id="sidebar" class="w-64 bg-white shadow-lg fixed h-full z-40 sidebar">
+    <div id="sidebar" class="w-64 bg-white shadow-lg fixed h-full z-20 sidebar">
             <div class="p-4 border-b flex items-center justify-between">
                 <h1 class="text-xl font-bold text-blue-600">HMS</h1>
                 <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg">
@@ -94,7 +39,7 @@
 
         <!-- Main Content -->
         <div id="mainContent" class="flex-1 ml-64 main-content">
-            <div class="bg-white shadow-sm p-4 sticky top-0 z-30">
+            <div class="bg-white shadow-sm p-4 sticky top-0 z-50">
                 <div class="flex justify-between items-center">
                     <h1 class="text-xl font-semibold text-gray-800">Welcome, <span id="userName"></span></h1>
                     <span id="userRole" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"></span>
@@ -115,222 +60,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
-            </div>
-            <div id="modalContent" class="space-y-4"></div>
-        </div>
-    </div>
-
-    <script>
-        // Global State
-        let currentUser = null;
-        let currentView = 'dashboard';
-        let sidebarOpen = true;
-        let patients = [];
-        let doctors = [];
-        let appointments = [];
-        let stats = {};
-
-        // Mock Data
-        const mockUsers = {
-            'admin@hospital.com': { role: 'admin', name: 'Admin User', id: '1' },
-            'doctor@hospital.com': { role: 'doctor', name: 'Dr. Smith', id: '2' },
-            'reception@hospital.com': { role: 'receptionist', name: 'Jane Doe', id: '3' },
-            'patient@hospital.com': { role: 'patient', name: 'John Patient', id: '4' }
-        };
-
-        const mockPatients = [
-            { id: '1', name: 'John Doe', age: 45, gender: 'Male', phone: '123-456-7890', email: 'john@email.com', address: '123 Main St' },
-            { id: '2', name: 'Jane Smith', age: 32, gender: 'Female', phone: '098-765-4321', email: 'jane@email.com', address: '456 Oak Ave' },
-            { id: '3', name: 'Bob Johnson', age: 58, gender: 'Male', phone: '555-123-4567', email: 'bob@email.com', address: '789 Pine Rd' }
-        ];
-
-        const mockDoctors = [
-            { id: '1', name: 'Dr. Sarah Smith', specialization: 'Cardiology', phone: '111-222-3333', email: 'sarah@hospital.com' },
-            { id: '2', name: 'Dr. Michael Brown', specialization: 'Neurology', phone: '444-555-6666', email: 'michael@hospital.com' },
-            { id: '3', name: 'Dr. Emily Davis', specialization: 'Pediatrics', phone: '777-888-9999', email: 'emily@hospital.com' }
-        ];
-
-        const mockAppointments = [
-            { id: '1', patientName: 'John Doe', doctorName: 'Dr. Sarah Smith', date: '2025-10-26', time: '10:00 AM', status: 'Scheduled' },
-            { id: '2', patientName: 'Jane Smith', doctorName: 'Dr. Michael Brown', date: '2025-10-27', time: '02:00 PM', status: 'Completed' },
-            { id: '3', patientName: 'Bob Johnson', doctorName: 'Dr. Emily Davis', date: '2025-10-28', time: '11:30 AM', status: 'Scheduled' }
-        ];
-
-        const mockStats = {
-            totalPatients: 156,
-            totalDoctors: 12,
-            todayAppointments: 24,
-            pendingBills: 8
-        };
-
-        // Initialize
-        function init() {
-            loadMockData();
-        }
-
-        function loadMockData() {
-            patients = [...mockPatients];
-            doctors = [...mockDoctors];
-            appointments = [...mockAppointments];
-            stats = {...mockStats};
-        }
-
-        // Login
-        function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const errorDiv = document.getElementById('loginError');
-
-            if (mockUsers[email] && password === 'password123') {
-                currentUser = mockUsers[email];
-                
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                
-                initializeApp();
-            } else {
-                errorDiv.textContent = 'Invalid email or password';
-                errorDiv.classList.remove('hidden');
-            }
-        }
-
-        // Logout
-        function handleLogout() {
-            currentUser = null;
-            
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('mainApp').classList.add('hidden');
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
-        }
-
-        // Initialize App
-        function initializeApp() {
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userRole').textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
-            
-            renderNavigation();
-            renderContent('dashboard');
-        }
-
-        // Navigation
-        function renderNavigation() {
-            const navItems = getNavItems();
-            const navMenu = document.getElementById('navMenu');
-            navMenu.innerHTML = '';
-
-            navItems.forEach(item => {
-                const button = document.createElement('button');
-                button.className = currentView === item.id 
-                    ? 'w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-600 text-white'
-                    : 'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100';
-                button.onclick = () => renderContent(item.id);
-                button.innerHTML = `
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        ${getIconSVG(item.icon)}
-                    </svg>
-                    <span class="font-medium">${item.label}</span>
-                `;
-                navMenu.appendChild(button);
-            });
-        }
-
-        function getNavItems() {
-            const items = [{ id: 'dashboard', label: 'Dashboard', icon: 'activity' }];
-            
-            if (currentUser.role === 'admin' || currentUser.role === 'receptionist') {
-                items.push({ id: 'patients', label: 'Patients', icon: 'users' });
-            }
-            if (currentUser.role === 'admin' || currentUser.role === 'receptionist' || currentUser.role === 'doctor') {
-                items.push({ id: 'appointments', label: 'Appointments', icon: 'calendar' });
-            }
-            if (currentUser.role === 'admin') {
-                items.push({ id: 'doctors', label: 'Doctors', icon: 'users' });
-            }
-            if (currentUser.role === 'patient') {
-                items.push({ id: 'myAppointments', label: 'My Appointments', icon: 'calendar' });
-                items.push({ id: 'myReports', label: 'My Reports', icon: 'file' });
-            }
-            
-            return items;
-        }
-
-        function getIconSVG(icon) {
-            const icons = {
-                activity: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>',
-                users: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>',
-                calendar: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>',
-                file: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>'
-            };
-            return icons[icon] || icons.activity;
-        }
-
-        // Render Content
-        function renderContent(view) {
-            currentView = view;
-            renderNavigation();
-            
-            const contentArea = document.getElementById('contentArea');
-            
-            switch(view) {
-                case 'dashboard':
-                    contentArea.innerHTML = renderDashboard();
-                    break;
-                case 'patients':
-                    contentArea.innerHTML = renderPatients();
-                    break;
-                case 'appointments':
-                case 'myAppointments':
-                    contentArea.innerHTML = renderAppointments();
-                    break;
-                case 'doctors':
-                    contentArea.innerHTML = renderDoctors();
-                    break;
-                case 'myReports':
-                    contentArea.innerHTML = renderReports();
-                    break;
-            }
-        }
-
-        function renderDashboard() {
-            return `
-                <div class="space-y-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        ${renderStatCard('Total Patients', stats.totalPatients, 'blue')}
-                        ${renderStatCard('Total Doctors', stats.totalDoctors, 'green')}
-                        ${renderStatCard("Today's Appointments", stats.todayAppointments, 'purple')}
-                        ${renderStatCard('Pending Bills', stats.pendingBills, 'orange')}
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Recent Appointments</h3>
-                        <div class="space-y-3">
-                            ${appointments.slice(0, 5).map(apt => `
-                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <p class="font-semibold text-gray-800">${apt.patientName}</p>
-                                        <p class="text-sm text-gray-600">with ${apt.doctorName}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-sm font-medium text-gray-700">${apt.date}</p>
-                                        <p class="text-sm text-gray-600">${apt.time}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${apt.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
-                                        ${apt.status}
-                                    </span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderStatCard(label, value, color) {
-            const colors = {
-                blue: 'bg-blue-500',
-                green: 'bg-green-500',
+            <...trimmed for brevity...>
                 purple: 'bg-purple-500',
                 orange: 'bg-orange-500'
             };
@@ -758,8 +488,68 @@
             init();
         };
     </script>
+
+    <!-- Layout overrides to prevent the sidebar from overlapping any views (dashboard, patients, appointments, etc.) -->
+    <style>
+        :root { --sidebar-w: 16rem; }
+
+        /* Sidebar base */
+        #sidebar {
+            left: 0;
+            width: var(--sidebar-w);
+            transition: width .25s ease, transform .25s ease;
+            z-index: 20 !important; /* keep behind the top bar */
+        }
+
+        /* Ensure main content is offset on wide screens */
+        .main-content {
+            margin-left: var(--sidebar-w) !important;
+            transition: margin-left .25s ease;
+        }
+
+        /* When collapsed, remove offset so content fills the screen */
+        body.sidebar-collapsed .main-content {
+            margin-left: 0 !important;
+        }
+
+        /* Make sure the sticky top bar (Welcome, ...) is above the sidebar */
+        .main-content .sticky.top-0 {
+            z-index: 60 !important;
+        }
+
+        /* Mobile behavior: sidebar slides in/out, content doesn't keep a left margin */
+        @media (max-width: 768px) {
+            .main-content { margin-left: 0 !important; }
+            #sidebar { transform: translateX(-100%); position: fixed; }
+            body.sidebar-open #sidebar { transform: translateX(0); }
+        }
+    </style>
+
+    <script>
+        /* Override toggleSidebar with a class-based approach so all views respect the layout rules */
+        (function(){
+            // keep the same global flag name used elsewhere
+            window.sidebarOpen = true;
+
+            document.addEventListener('DOMContentLoaded', function(){
+                // ensure initial class so desktop layout has the offset
+                document.body.classList.add('sidebar-open');
+            });
+
+            window.toggleSidebar = function() {
+                window.sidebarOpen = !window.sidebarOpen;
+                if (window.sidebarOpen) {
+                    document.body.classList.add('sidebar-open');
+                    document.body.classList.remove('sidebar-collapsed');
+                } else {
+                    document.body.classList.remove('sidebar-open');
+                    document.body.classList.add('sidebar-collapsed');
+                }
+            };
+        })();
+    </script>
 </body>
-</html>M4 7h16"/>
+</html>
                                                         </svg>
                                                     </button>
                                                 </div>
@@ -784,6 +574,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                             </svg>
                             Book Appointment
+                            <p1> hi   </p1>
                         </button>
                     </div>
                     
